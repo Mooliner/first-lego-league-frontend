@@ -1,6 +1,7 @@
 import { RecordService } from "@/api/recordApi";
 import { UsersService } from "@/api/userApi";
 import { Card, CardHeader, CardTitle } from "@/app/components/card";
+import PageShell from "@/app/components/page-shell";
 import { serverAuthProvider } from "@/lib/authProvider";
 import { Record } from "@/types/record";
 import Link from "next/link";
@@ -21,36 +22,44 @@ export default async function UsersPage(props: Readonly<UsersPageProps>) {
     }
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-            <main
-                className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-                <div className="flex flex-col items-center w-full gap-6 text-center sm:items-start sm:text-left">
-                    <div className="space-y-4 w-full">
-                        <h1 className="text-2xl font-semibold">{user.username}</h1>
+        <PageShell
+            eyebrow="Participant profile"
+            title={user.username}
+            description="User details and associated records keep their original fetch and rendering behavior, now presented with a clearer hierarchy."
+        >
+            <div className="space-y-8">
+                <div className="space-y-3">
+                    <div className="page-eyebrow">User details</div>
+                    <h2 className="section-title">{user.username}</h2>
+                    {user.email && (
+                        <p className="section-copy">
+                            <strong>Email:</strong> {user.email}
+                        </p>
+                    )}
+                </div>
 
-                        {user.email && (
-                            <p className="text-gray-700">
-                                <strong>Email:</strong> {user.email}
-                            </p>
-                        )}
+                <div className="editorial-divider" />
 
-                        <h2 className="text-xl font-semibold mt-8">Records</h2>
+                <div className="space-y-4">
+                    <div className="page-eyebrow">Records</div>
+                    <h2 className="section-title">Records</h2>
 
-                        <div className="space-y-3 w-full">
-                            {records.map((record) => (
-                                <Card key={record.uri} className="w-full">
-                                    <CardHeader>
-                                        <CardTitle><Link href={record.uri} className="hover:underline">
+                    <div className="grid gap-4">
+                        {records.map((record) => (
+                            <Card key={record.uri} className="border-border/90">
+                                <CardHeader>
+                                    <div className="list-kicker">Record</div>
+                                    <CardTitle className="text-xl">
+                                        <Link href={record.uri} className="hover:text-primary">
                                             {record.name}
-                                        </Link></CardTitle>
-                                    </CardHeader>
-                                </Card>
-                            ))}
-                        </div>
-
+                                        </Link>
+                                    </CardTitle>
+                                </CardHeader>
+                            </Card>
+                        ))}
                     </div>
                 </div>
-            </main>
-        </div>
+            </div>
+        </PageShell>
     );
 }
