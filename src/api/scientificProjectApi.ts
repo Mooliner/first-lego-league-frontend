@@ -6,7 +6,7 @@ export class ScientificProjectsService {
     constructor(private readonly authStrategy: AuthStrategy) {}
 
     async getScientificProjects(): Promise<ScientificProject[]> {
-        const resource = await getHal('/scientific-projects', this.authStrategy);
+        const resource = await getHal('/scientificProjects', this.authStrategy);
         const embedded = resource.embeddedArray('scientificProjects') || [];
         return mergeHalArray<ScientificProject>(embedded);
     }
