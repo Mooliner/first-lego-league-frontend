@@ -2,6 +2,8 @@ import { ScientificProjectsService } from "@/api/scientificProjectApi";
 import PageShell from "@/app/components/page-shell";
 import { serverAuthProvider } from "@/lib/authProvider";
 import { ScientificProject } from "@/types/scientificProject";
+import Link from "next/link";
+import { buttonVariants } from "@/app/components/button";
 
 function ScientificProjectCard({ project, index }: Readonly<{ project: ScientificProject; index: number }>) {
     return (
@@ -41,6 +43,14 @@ export default async function ScientificProjectsPage() {
             eyebrow="Innovation project"
             title="Scientific Projects"
             description="Explore innovation projects linked to each FIRST LEGO League edition."
+            heroAside={
+                <Link
+                    href="/scientific-projects/new"
+                    className={buttonVariants({ variant: "default", size: "sm" })}
+                >
+                    New Project
+                </Link>
+            }
         >
             <div className="space-y-6">
                 <div className="space-y-3">
