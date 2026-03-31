@@ -32,6 +32,7 @@ export default async function EditionDetailPage(props: Readonly<EditionDetailPag
     let edition: Edition | null = null;
     let teams: Team[] = [];
     let error: string | null = null;
+    let teamsError: string | null = null;
 
     try {
         edition = await service.getEditionById(id);
@@ -47,7 +48,7 @@ export default async function EditionDetailPage(props: Readonly<EditionDetailPag
             teams = await service.getEditionTeams(id);
         } catch (e) {
             console.error("Failed to fetch teams:", e);
-            // Don't fail the whole page if teams fail, just show empty state
+            teamsError = parseErrorMessage(e);
         }
     }
 
@@ -73,14 +74,18 @@ export default async function EditionDetailPage(props: Readonly<EditionDetailPag
                         <>
                             <h2 className="mt-8 mb-4 text-xl font-semibold">Participating Teams</h2>
 
-                            {teams.length === 0 && (
+                            {teamsError && (
+                                <ErrorAlert message={teamsError} />
+                            )}
+
+                            {!teamsError && teams.length === 0 && (
                                 <EmptyState
                                     title="No teams found"
                                     description="No teams are registered for this edition yet."
                                 />
                             )}
 
-                            {teams.length > 0 && (
+                            {!teamsError && teams.length > 0 && (
                                 <ul className="w-full space-y-3">
                                     {teams.map((team, index) => {
                                         const href = getTeamHref(team);

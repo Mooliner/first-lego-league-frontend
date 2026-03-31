@@ -8,7 +8,7 @@ import { Button } from "@/app/components/button";
 import { Input } from "@/app/components/input";
 import { Label } from "@/app/components/label";
 import { AUTH_COOKIE_NAME, clientAuthProvider } from "@/lib/authProvider";
-import { parseErrorMessage } from "@/types/errors";
+import { AuthenticationError, parseErrorMessage } from "@/types/errors";
 import { deleteCookie, setCookie } from "cookies-next";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -58,7 +58,13 @@ export default function LoginPage() {
         }).catch((error) => {
             deleteCookie(AUTH_COOKIE_NAME);
             localStorage.removeItem(AUTH_COOKIE_NAME);
-            setErrorMessage(parseErrorMessage(error));
+            
+            // Special case: Authentication errors on login should show credential-specific message
+            if (error instanceof AuthenticationError) {
+                setErrorMessage("Invalid username or password. Please try again.");
+            } else {
+                setErrorMessage(parseErrorMessage(error));
+            }
         });
     };
 

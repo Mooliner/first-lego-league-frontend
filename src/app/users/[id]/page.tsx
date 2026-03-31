@@ -8,6 +8,7 @@ import { serverAuthProvider } from "@/lib/authProvider";
 import { Record } from "@/types/record";
 import { parseErrorMessage, NotFoundError } from "@/types/errors";
 import Link from "next/link";
+import { User } from "@/types/user";
 
 interface UsersPageProps {
     params: Promise<{ id: string }>;
@@ -25,9 +26,10 @@ export default async function UsersPage(props: Readonly<UsersPageProps>) {
     const userService = new UsersService(serverAuthProvider);
     const recordService = new RecordService(serverAuthProvider);
     
-    let user = null;
+    let user: User | null = null;
     let records: Record[] = [];
     let error: string | null = null;
+    let recordsError: string | null = null;
     
     try {
         user = await userService.getUserById((await props.params).id);
@@ -43,7 +45,7 @@ export default async function UsersPage(props: Readonly<UsersPageProps>) {
             records = await recordService.getRecordsByOwnedBy(user);
         } catch (e) {
             console.error("Failed to fetch user records:", e);
-            // Don't fail the whole page if records fail, just show empty state
+            recordsError = parseErrorMessage(e);
         }
     }
 
@@ -82,14 +84,16 @@ export default async function UsersPage(props: Readonly<UsersPageProps>) {
                     <div className="page-eyebrow">Records</div>
                     <h2 className="section-title">Records</h2>
 
-                    {records.length === 0 && (
+                    {recordsError && <ErrorAlert message={recordsError} />}
+
+                    {!recordsError && records.length === 0 && (
                         <EmptyState
                             title="No records found"
                             description="This user has not created any records yet."
                         />
                     )}
 
-                    {records.length > 0 && (
+                    {!recordsError && records.length > 0 && (
                         <div className="grid gap-4">
                             {records.map((record) => (
                                 <Card key={record.uri} className="border-border/90">

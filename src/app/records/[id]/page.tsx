@@ -18,6 +18,7 @@ export default async function RecordPage(props: Readonly<RecordPageProps>) {
     let record: Record | null = null;
     let owner: User | null = null;
     let error: string | null = null;
+    let ownerError = false;
 
     try {
         record = await recordService.getRecordById((await props.params).id);
@@ -33,7 +34,7 @@ export default async function RecordPage(props: Readonly<RecordPageProps>) {
             owner = await recordService.getRecordRelation<User>(record, "ownedBy");
         } catch (e) {
             console.error("Failed to fetch record owner:", e);
-            // Don't fail the whole page if owner fetch fails
+            ownerError = true;
         }
     }
 
@@ -91,6 +92,11 @@ export default async function RecordPage(props: Readonly<RecordPageProps>) {
                                 </p>
                             )}
                         </>
+                    )}
+                    {!owner && ownerError && (
+                        <p className="text-sm text-muted-foreground italic">
+                            Owner information unavailable
+                        </p>
                     )}
                 </CardContent>
             </Card>

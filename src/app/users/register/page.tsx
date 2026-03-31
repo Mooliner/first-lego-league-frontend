@@ -30,9 +30,9 @@ export default function RegistrationPage() {
     const router = useRouter();
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-    const onSubmit: SubmitHandler<FormValues> = (data) => {
+    const onSubmit: SubmitHandler<FormValues> = async (data) => {
         setErrorMessage(null);
-        service.createUser(data as User)
+        return service.createUser(data as User)
             .then(() => {
                 router.push("/login");
             })
