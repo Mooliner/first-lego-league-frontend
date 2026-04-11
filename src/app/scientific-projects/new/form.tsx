@@ -5,7 +5,7 @@ import { Input } from "@/app/components/input";
 import { Label } from "@/app/components/label";
 import { Textarea } from "@/app/components/textarea";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { createScientificProject } from "./actions";
 
@@ -25,14 +25,21 @@ const selectClassName =
 
 export default function NewScientificProjectForm({
     editionOptions,
-    teamOptions,
+    teamsPerEdition,
 }: {
     editionOptions: Option[];
-    teamOptions: Option[];
+    teamsPerEdition: Record<string, Option[]>;
 }) {
     const [submitError, setSubmitError] = useState<string | null>(null);
-    const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormValues>();
+    const { register, handleSubmit, watch, setValue, formState: { errors, isSubmitting } } = useForm<FormValues>();
     const router = useRouter();
+
+    const watchedEdition = watch("edition");
+    const visibleTeams = teamsPerEdition[watchedEdition] ?? [];
+
+    useEffect(() => {
+        setValue("team", "");
+    }, [watchedEdition, setValue]);
 
     const onSubmit: SubmitHandler<FormValues> = async (data) => {
         setSubmitError(null);
@@ -60,7 +67,10 @@ export default function NewScientificProjectForm({
                 <Label htmlFor="name">Project name</Label>
                 <Input
                     id="name"
-                    {...register("name", { required: "Project name is required" })}
+                    {...register("name", {
+                        required: "Project name is required",
+                        maxLength: { value: 100, message: "Max 100 characters" }
+                    })}
                 />
                 {errors.name && (
                     <p className="text-sm text-destructive">{errors.name.message}</p>
@@ -71,7 +81,10 @@ export default function NewScientificProjectForm({
                 <Label htmlFor="description">Description</Label>
                 <Textarea
                     id="description"
-                    {...register("description", { required: "Description is required" })}
+                    {...register("description", {
+                        required: "Description is required",
+                        maxLength: { value: 400, message: "Max 400 characters" }
+                    })}
                 />
                 {errors.description && (
                     <p className="text-sm text-destructive">{errors.description.message}</p>
@@ -100,10 +113,13 @@ export default function NewScientificProjectForm({
                 <select
                     id="team"
                     className={selectClassName}
+                    disabled={!watchedEdition}
                     {...register("team", { required: "Team is required" })}
                 >
-                    <option value="">Select a team...</option>
-                    {teamOptions.map(opt => (
+                    <option value="">
+                        {watchedEdition ? "Select a team..." : "Select an edition first..."}
+                    </option>
+                    {visibleTeams.map(opt => (
                         <option key={opt.value} value={opt.value}>{opt.label}</option>
                     ))}
                 </select>

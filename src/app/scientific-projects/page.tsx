@@ -32,6 +32,9 @@ function ScientificProjectCard({ project, index }: Readonly<{ project: Scientifi
 export default async function ScientificProjectsPage() {
     let projects: ScientificProject[] = [];
     let error: string | null = null;
+    const auth = await serverAuthProvider.getAuth();
+    const isLoggedIn = !!auth;
+
 
     try {
         const service = new ScientificProjectsService(serverAuthProvider);
@@ -46,14 +49,12 @@ export default async function ScientificProjectsPage() {
             eyebrow="Innovation project"
             title="Scientific Projects"
             description="Explore innovation projects linked to each FIRST LEGO League edition."
-            heroAside={
-                <Link
-                    href="/scientific-projects/new"
-                    className={buttonVariants({ variant: "default", size: "sm" })}
-                >
+            heroAside={isLoggedIn ? (
+                <Link href="/scientific-projects/new" className={buttonVariants({ variant: "default", size: "sm" })}>
                     New Project
                 </Link>
-            }
+            ) : undefined}
+
         >
             <div className="space-y-6">
                 <div className="space-y-3">

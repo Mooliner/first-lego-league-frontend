@@ -8,5 +8,5 @@ export async function createScientificProject(
     data: Pick<ScientificProject, "comments" | "team" | "edition">
 ) {
     const service = new ScientificProjectsService(serverAuthProvider);
-    return service.createScientificProject(data as ScientificProject);
+    await service.createScientificProject(data as ScientificProject);
 }
