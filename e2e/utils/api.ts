@@ -1,5 +1,12 @@
 import { APIRequestContext, expect } from "@playwright/test";
-import { TestUser } from "./test-data";
+import { TestTeam, TestUser } from "./test-data";
+
+const ADMIN_TEST_USER = {
+    username: "admin",
+    password: "password",
+} as const;
+
+type BasicAuthCredentials = Pick<TestUser, "username" | "password">;
 
 function trimTrailingSlashes(value: string) {
     let end = value.length;
@@ -21,13 +28,14 @@ export function getApiBaseUrl() {
     return trimTrailingSlashes(baseUrl);
 }
 
-function getBasicAuthHeader(user: TestUser) {
+function getBasicAuthHeader(user: BasicAuthCredentials) {
     const token = Buffer.from(`${user.username}:${user.password}`).toString("base64");
     return `Basic ${token}`;
 }
 
 export async function createUserViaApi(request: APIRequestContext, user: TestUser) {
-    const response = await request.post(`${getApiBaseUrl()}/users`, {
+    const baseUrl = getApiBaseUrl();
+    const response = await request.post(`${baseUrl}/users`, {
         headers: {
             Accept: "application/hal+json",
             "Content-Type": "application/json",
@@ -42,36 +50,25 @@ export async function createUserViaApi(request: APIRequestContext, user: TestUse
     expect(response.status(), await response.text()).toBe(201);
 }
 
-export async function createRecordViaApi(
+export async function createTeamViaApi(
     request: APIRequestContext,
-    user: TestUser,
-    name: string
+    team: TestTeam
 ) {
-    const response = await request.post(`${getApiBaseUrl()}/records`, {
+    const baseUrl = getApiBaseUrl();
+    const response = await request.post(`${baseUrl}/teams`, {
         headers: {
             Accept: "application/hal+json",
             "Content-Type": "application/json",
-            Authorization: getBasicAuthHeader(user),
+            Authorization: getBasicAuthHeader(ADMIN_TEST_USER),
         },
         data: {
-            name,
-            description: "Record created by the Playwright E2E suite.",
-            owner: `${getApiBaseUrl()}/users/${encodeURIComponent(user.username)}`,
+            name: team.name,
+            city: team.city,
+            category: team.category,
+            foundationYear: team.foundationYear,
+            educationalCenter: team.educationalCenter,
         },
     });
 
     expect(response.status(), await response.text()).toBe(201);
-}
-
-export async function hasRecordsApi(request: APIRequestContext) {
-    const response = await request.get(`${getApiBaseUrl()}/`, {
-        headers: {
-            Accept: "application/hal+json",
-        },
-    });
-
-    expect(response.status(), await response.text()).toBe(200);
-
-    const body = await response.json();
-    return Boolean(body?._links?.records?.href);
 }

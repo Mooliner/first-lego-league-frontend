@@ -4,6 +4,14 @@ export type TestUser = {
     password: string;
 };
 
+export type TestTeam = {
+    name: string;
+    city: string;
+    category: string;
+    foundationYear: number;
+    educationalCenter: string;
+};
+
 function randomSuffix() {
     return `${Date.now()}-${crypto.randomUUID().slice(0, 8)}`;
 }
@@ -22,6 +30,12 @@ export function createTestUser(prefix = "e2e-user"): TestUser {
     };
 }
 
-export function createRecordName() {
-    return `E2E Record ${randomSuffix()}`;
+export function createTestTeam(prefix = "E2E Team"): TestTeam {
+    return {
+        name: `${prefix} ${randomSuffix()}`,
+        city: "Igualada",
+        category: "CHALLENGE",
+        foundationYear: new Date().getUTCFullYear(),
+        educationalCenter: "E2E Test School",
+    };
 }

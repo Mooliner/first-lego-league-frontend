@@ -24,5 +24,8 @@ test("an authenticated user can browse the users directory and open a profile", 
 
     await expect(page).toHaveURL(new RegExp(String.raw`/users/${escapeForRegExp(user.username)}$`));
     await expect(page.getByRole("heading", { name: user.username, level: 1 })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Records", level: 2 })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Edit profile", level: 2 })).toBeVisible();
+    await expect(page.getByLabel("Email")).toHaveValue(user.email);
+    await expect(page.getByLabel("New password", { exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Save changes" })).toBeVisible();
 });
