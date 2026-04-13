@@ -11,81 +11,64 @@ function getAdminUser() {
     };
 }
 
-test("the delete button is disabled for the currently logged-in administrator", async ({ page }) => {
-    test.skip(!hasAdminTestUser(), "Admin credentials not configured");
+test.describe("administrators delete flow", () => {
+    test.beforeEach(async ({ page }) => {
+        test.skip(!hasAdminTestUser(), "Admin credentials not configured");
+        await loginViaUi(page, getAdminUser());
+        await page.goto("/administrators");
+        await expect(page.getByRole("heading", { name: "Administrators", level: 1 })).toBeVisible();
+    });
 
-    const adminUser = getAdminUser();
-    await loginViaUi(page, adminUser);
-    await page.goto("/administrators");
+    test("the delete button is disabled for the currently logged-in administrator", async ({ page }) => {
+        const ownCard = page.locator("li", { hasText: getAdminUser().username }).first();
+        await expect(ownCard.getByRole("button", { name: "You cannot delete your own account" })).toBeDisabled();
+    });
 
-    await expect(page.getByRole("heading", { name: "Administrators", level: 1 })).toBeVisible();
+    test("an admin can cancel deleting an administrator and the list is unchanged", async ({ page, request }) => {
+        const targetAdmin = createTestUser("e2e-admin");
+        await createAdministratorViaApi(request, targetAdmin);
+        await page.reload();
 
-    const ownCard = page.locator("li", { hasText: adminUser.username }).first();
-    const ownDeleteButton = ownCard.getByRole("button", { name: "You cannot delete your own account" });
-    await expect(ownDeleteButton).toBeDisabled();
-});
+        const adminCard = page.locator("li", { hasText: targetAdmin.username }).first();
+        await adminCard.getByRole("button", { name: `Delete ${targetAdmin.username}` }).click();
 
-test("an admin can cancel deleting an administrator and the list is unchanged", async ({ page, request }) => {
-    test.skip(!hasAdminTestUser(), "Admin credentials not configured");
+        const dialog = page.getByRole("dialog", { name: "Delete administrator" });
+        await expect(dialog).toBeVisible();
+        await expect(dialog.getByText(targetAdmin.username)).toBeVisible();
 
-    const adminUser = getAdminUser();
-    const targetAdmin = createTestUser("e2e-admin");
+        await page.getByRole("button", { name: "Cancel" }).click();
 
-    await createAdministratorViaApi(request, targetAdmin);
-    await loginViaUi(page, adminUser);
-    await page.goto("/administrators");
+        await expect(dialog).not.toBeVisible();
+        await expect(page.locator("li", { hasText: targetAdmin.username }).first()).toBeVisible();
+    });
 
-    const adminCard = page.locator("li", { hasText: targetAdmin.username }).first();
-    await adminCard.getByRole("button", { name: `Delete ${targetAdmin.username}` }).click();
+    test("an admin can delete another administrator and the list updates", async ({ page, request }) => {
+        const targetAdmin = createTestUser("e2e-admin");
+        await createAdministratorViaApi(request, targetAdmin);
+        await page.reload();
 
-    const dialog = page.getByRole("dialog", { name: "Delete administrator" });
-    await expect(dialog).toBeVisible();
-    await expect(dialog.getByText(targetAdmin.username)).toBeVisible();
+        const adminCard = page.locator("li", { hasText: targetAdmin.username }).first();
+        await adminCard.getByRole("button", { name: `Delete ${targetAdmin.username}` }).click();
 
-    await page.getByRole("button", { name: "Cancel" }).click();
+        await expect(page.getByRole("dialog", { name: "Delete administrator" })).toBeVisible();
+        await page.getByRole("button", { name: "Delete administrator" }).click();
 
-    await expect(dialog).not.toBeVisible();
-    await expect(page.locator("li", { hasText: targetAdmin.username }).first()).toBeVisible();
-});
+        await expect(page.getByText("Administrator deleted successfully.")).toBeVisible();
+        await expect(page.locator("li", { hasText: targetAdmin.username })).not.toBeVisible();
+    });
 
-test("an admin can delete another administrator and the list updates", async ({ page, request }) => {
-    test.skip(!hasAdminTestUser(), "Admin credentials not configured");
+    test("pressing Escape cancels the delete dialog", async ({ page, request }) => {
+        const targetAdmin = createTestUser("e2e-admin");
+        await createAdministratorViaApi(request, targetAdmin);
+        await page.reload();
 
-    const adminUser = getAdminUser();
-    const targetAdmin = createTestUser("e2e-admin");
+        const adminCard = page.locator("li", { hasText: targetAdmin.username }).first();
+        await adminCard.getByRole("button", { name: `Delete ${targetAdmin.username}` }).click();
 
-    await createAdministratorViaApi(request, targetAdmin);
-    await loginViaUi(page, adminUser);
-    await page.goto("/administrators");
+        await expect(page.getByRole("dialog", { name: "Delete administrator" })).toBeVisible();
+        await page.keyboard.press("Escape");
 
-    const adminCard = page.locator("li", { hasText: targetAdmin.username }).first();
-    await adminCard.getByRole("button", { name: `Delete ${targetAdmin.username}` }).click();
-
-    await expect(page.getByRole("dialog", { name: "Delete administrator" })).toBeVisible();
-
-    await page.getByRole("button", { name: "Delete administrator" }).click();
-
-    await expect(page.getByText("Administrator deleted successfully.")).toBeVisible();
-    await expect(page.locator("li", { hasText: targetAdmin.username })).not.toBeVisible();
-});
-
-test("pressing Escape cancels the delete dialog", async ({ page, request }) => {
-    test.skip(!hasAdminTestUser(), "Admin credentials not configured");
-
-    const adminUser = getAdminUser();
-    const targetAdmin = createTestUser("e2e-admin");
-
-    await createAdministratorViaApi(request, targetAdmin);
-    await loginViaUi(page, adminUser);
-    await page.goto("/administrators");
-
-    const adminCard = page.locator("li", { hasText: targetAdmin.username }).first();
-    await adminCard.getByRole("button", { name: `Delete ${targetAdmin.username}` }).click();
-
-    await expect(page.getByRole("dialog", { name: "Delete administrator" })).toBeVisible();
-
-    await page.keyboard.press("Escape");
-
-    await expect(page.getByRole("dialog")).not.toBeVisible();
-    await expect(page.locator("li", { hasText: targetAdmin.username }).first()).toBeVisible();
+        await expect(page.getByRole("dialog")).not.toBeVisible();
+        await expect(page.locator("li", { hasText: targetAdmin.username }).first()).toBeVisible();
+    });
 });

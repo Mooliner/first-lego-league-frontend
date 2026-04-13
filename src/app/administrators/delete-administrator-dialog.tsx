@@ -51,13 +51,6 @@ export default function DeleteAdministratorDialog({
     return () => dialog.removeEventListener("cancel", handleCancel);
   }, [isDeleting, onCancel]);
 
-  // Close when clicking on the native backdrop (click target is the <dialog> element itself)
-  function handleBackdropClick(event: React.MouseEvent<HTMLDialogElement>) {
-    if (event.target === dialogRef.current && !isDeleting) {
-      onCancel();
-    }
-  }
-
   async function handleDelete() {
     setIsDeleting(true);
     setErrorMessage(null);
@@ -77,7 +70,6 @@ export default function DeleteAdministratorDialog({
       aria-labelledby={titleId}
       aria-busy={isDeleting}
       className="m-auto w-full max-w-md border border-border bg-card px-6 py-6 shadow-lg backdrop:bg-black/50 sm:px-8 sm:py-8"
-      onClick={handleBackdropClick}
     >
       <h2
         id={titleId}
