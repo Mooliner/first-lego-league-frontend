@@ -23,7 +23,7 @@ export interface AddMemberPayload {
 }
 
 export class TeamsService {
-    constructor(private readonly authStrategy: AuthStrategy) { }
+    constructor(private readonly authStrategy: AuthStrategy) {}
 
     async getTeams(): Promise<Team[]> {
         return fetchHalCollection<Team>('/teams', this.authStrategy, 'teams');
@@ -36,7 +36,11 @@ export class TeamsService {
 
     async getTeamCoach(id: string): Promise<User[]> {
         const teamId = getSafeEncodedId(id);
-        return fetchHalCollection<User>(`/teams/${teamId}/trainedBy`, this.authStrategy, 'coaches');
+        return fetchHalCollection<User>(
+            `/teams/${teamId}/trainedBy`,
+            this.authStrategy,
+            'coaches'
+        );
     }
 
     async getTeamMembers(teamId: string): Promise<User[]> {
@@ -46,17 +50,20 @@ export class TeamsService {
             'teamMembers'
         );
     }
+
     async addTeamMember(teamId: string, data: AddMemberPayload): Promise<User> {
-        const id = getSafeEncodedId(teamId);
         return createHalResource<User>(
-            `/teams/${id}/members`,
-            data as Resource,
+            `/teamMembers`,
+            {
+                ...data,
+                team: `/teams/${getSafeEncodedId(teamId)}`
+            } as unknown as Resource, // 🔥 FIX TypeScript
             this.authStrategy,
             'team member'
         );
     }
 
-    async removeTeamMember(teamId: string, memberId: string): Promise<void> {
-        await deleteHal(`/teams/${teamId}/members/${memberId}`, this.authStrategy);
+    async removeTeamMember(memberUri: string): Promise<void> {
+        await deleteHal(memberUri, this.authStrategy);
     }
 }
