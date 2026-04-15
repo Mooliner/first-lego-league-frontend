@@ -41,9 +41,9 @@ export function useTeamMembers(teamId: string, initialMembers: User[] = []) {
                     role,
                 });
 
-                setMembers(prev => [...prev, newMember]);
+                setMembers(prev => [...prev, newMember as unknown as User]);
                 return true;
-            } catch (e) {
+            } catch {
                 setError('Failed to add member');
                 return false;
             } finally {
@@ -67,7 +67,7 @@ export function useTeamMembers(teamId: string, initialMembers: User[] = []) {
                 await service.removeTeamMember(memberUri);
                 setMembers(prev =>
                     prev.filter(m => {
-                        const memberData = m as unknown;
+                        const memberData = m as { _links?: { self: { href: string } }, uri?: string };
                         const href = memberData._links?.self?.href || memberData.uri;
                         return href !== memberUri;
                     })
