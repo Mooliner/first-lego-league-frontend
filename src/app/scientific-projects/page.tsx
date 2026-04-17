@@ -12,7 +12,7 @@ import { parseErrorMessage } from "@/types/errors";
 
 function ScientificProjectCard({ project, index }: Readonly<{ project: ScientificProject; index: number }>) {
     return (
-        <div className="list-card block h-full pl-7">
+        <div className="list-card block h-full pl-7 transition-colors hover:bg-secondary/30">
             <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="min-w-0 space-y-2">
                     <div className="list-kicker">Scientific Project #{index + 1}</div>
@@ -71,7 +71,6 @@ export default async function ScientificProjectsPage({ searchParams }: Readonly<
                     New Project
                 </Link>
             ) : undefined}
-
         >
             <div className="space-y-6">
                 <div className="space-y-3">
@@ -93,11 +92,19 @@ export default async function ScientificProjectsPage({ searchParams }: Readonly<
 
                 {!error && projects.length > 0 && (
                     <ul className="list-grid">
-                        {projects.map((project, index) => (
-                            <li key={project.uri ?? index}>
-                                <ScientificProjectCard project={project} index={index} />
-                            </li>
-                        ))}
+                        {projects.map((project, index) => {
+                            const projectId = getEncodedResourceId(project.uri);
+                            const card = <ScientificProjectCard project={project} index={index} />;
+                            return (
+                                <li key={project.uri ?? index}>
+                                    {projectId ? (
+                                        <Link href={`/scientific-projects/${projectId}`} className="block h-full">
+                                            {card}
+                                        </Link>
+                                    ) : card}
+                                </li>
+                            );
+                        })}
                     </ul>
                 )}
             </div>
