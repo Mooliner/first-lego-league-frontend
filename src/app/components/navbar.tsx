@@ -80,10 +80,13 @@ export default function Navbar() {
                 <div className="order-2 flex items-center gap-3 lg:order-3">
                     <Loginbar />
                     <button
+                        type="button"
                         onClick={toggleTheme}
+                        aria-label="Toggle dark mode"
                         className="rounded-md border border-border px-3 py-1.5 text-sm text-muted-foreground hover:bg-secondary hover:text-foreground cursor-pointer"
                     >
-                        {isDark ? '☀️' : '🌙'}
+                        <span className="dark:hidden">🌙</span>
+                        <span className="hidden dark:inline">☀️</span>
                     </button>
 
                 </div>
