@@ -15,10 +15,10 @@ interface TeamMember {
 }
 
 interface TeamMembersManagerProps {
-    teamId: string;
-    initialMembers: User[];
-    isCoach: boolean;
-    isAdmin: boolean;
+    readonly teamId: string;
+    readonly initialMembers: User[];
+    readonly isCoach: boolean;
+    readonly isAdmin: boolean;
 }
 
 export function TeamMembersManager({ teamId, initialMembers, isCoach, isAdmin }: TeamMembersManagerProps) {
