@@ -4,14 +4,18 @@ import { buttonVariants } from "@/app/components/button";
 import EmptyState from "@/app/components/empty-state";
 import ErrorAlert from "@/app/components/error-alert";
 import PageShell from "@/app/components/page-shell";
+import PaginationControls from "@/app/components/pagination-controls";
 import { ScientificProjectCardLink } from "@/app/components/scientific-project-card";
 import { serverAuthProvider } from "@/lib/authProvider";
 import { getEncodedResourceId } from "@/lib/halRoute";
 import { parseErrorMessage } from "@/types/errors";
+import type { HalPage } from "@/types/pagination";
 import { ScientificProject } from "@/types/scientificProject";
 import Link from "next/link";
 
 type PageSearchParams = Promise<Record<string, string | string[] | undefined>>;
+
+const PAGE_SIZE = 5;
 
 export default async function ScientificProjectsPage({ searchParams }: Readonly<{ searchParams: PageSearchParams }>) {
     const params = await searchParams;
@@ -75,13 +79,23 @@ export default async function ScientificProjectsPage({ searchParams }: Readonly<
                 )}
 
                 {!error && projects.length > 0 && (
-                    <ul className="list-grid">
-                        {projects.map((project, index) => (
-                            <li key={project.uri ?? project.link("self")?.href ?? index}>
-                                <ScientificProjectCardLink project={project} index={index} />
-                            </li>
-                        ))}
-                    </ul>
+                    <>
+                        <ul className="list-grid">
+                            {projects.map((project, index) => (
+                                <li key={project.uri ?? project.link("self")?.href ?? index}>
+                                    <ScientificProjectCardLink project={project} index={index} />
+                                </li>
+                            ))}
+                        </ul>
+                        {!year && (
+                            <PaginationControls
+                                currentPage={urlPage}
+                                hasNext={result.hasNext}
+                                hasPrev={result.hasPrev}
+                                basePath="/scientific-projects"
+                            />
+                        )}
+                    </>
                 )}
             </div>
         </PageShell>

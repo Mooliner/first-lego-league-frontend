@@ -8,7 +8,7 @@ import { TeamMembersManager } from "@/app/components/team-member-manager";
 import { serverAuthProvider } from "@/lib/authProvider";
 import { NotFoundError, parseErrorMessage } from "@/types/errors";
 import { ScientificProject } from "@/types/scientificProject";
-import { Team } from "@/types/team";
+import { Team, TeamCoach, TeamMember, TeamMemberSnapshot } from "@/types/team";
 import { User } from "@/types/user";
 
 interface TeamDetailPageProps {
@@ -27,44 +27,12 @@ function toTeamMemberSnapshot(member: TeamMember): TeamMemberSnapshot {
     };
 }
 
-interface HalMemberResponse {
-    _embedded?: {
-        teamMembers: RawMember[];
-    };
-}
-
 function getTeamDisplayName(team: Team | null): string | null {
     if (!team) {
         return null;
     }
 
     return team.name ?? team.id ?? null;
-}
-
-function extractTeamMembers(data: unknown): User[] {
-    const isHalResponse = (obj: unknown): obj is HalMemberResponse => {
-        return !!obj && typeof obj === 'object' && '_embedded' in obj;
-    };
-
-    let rawMembers: RawMember[] = [];
-    if (Array.isArray(data)) {
-        rawMembers = data as RawMember[];
-    } else if (isHalResponse(data)) {
-        rawMembers = data._embedded?.teamMembers ?? [];
-    } else {
-        rawMembers = [];
-    }
-
-    return rawMembers.map((m, index) => {
-        const extractedId = m._links?.self?.href?.split('/').pop() || m.uri?.split('/').pop();
-
-        return {
-            id: String(m.id ?? extractedId ?? `member-${index}`),
-            name: String(m.name ?? m.username ?? "Unnamed member"),
-            role: String(m.role ?? "Member"),
-            uri: String(m._links?.self?.href || m.uri || "")
-        } as unknown as User;
-    });
 }
 
 export default async function TeamDetailPage(props: Readonly<TeamDetailPageProps>) {
@@ -76,8 +44,8 @@ export default async function TeamDetailPage(props: Readonly<TeamDetailPageProps
 
     let currentUser: User | null = null;
     let team: Team | null = null;
-    let coaches: User[] = [];
-    let members: User[] = [];
+    let coaches: TeamCoach[] = [];
+    let members: TeamMember[] = [];
     let scientificProjects: ScientificProject[] = [];
     let error: string | null = null;
     let membersError: string | null = null;
@@ -106,7 +74,7 @@ export default async function TeamDetailPage(props: Readonly<TeamDetailPageProps
         if (membersResult.status === "fulfilled") {
             const [coachesData, membersData] = membersResult.value;
             coaches = coachesData ?? [];
-            members = extractTeamMembers(membersData);
+            members = membersData ?? [];
         } else {
             console.error("Error loading members:", membersResult.reason);
             membersError = parseErrorMessage(membersResult.reason);
