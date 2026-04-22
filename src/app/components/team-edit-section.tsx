@@ -57,8 +57,9 @@ export default function TeamEditSection({ team }: TeamEditSectionProps) {
 
             const result = await updateTeam(payload);
 
+            // 🔧 FIX: ya no accedemos a result.error porque no existe en el tipo
             if (!result?.success) {
-                throw new Error(result?.error || 'Failed to update team.');
+                throw new Error('Failed to update team.');
             }
 
             router.refresh();
