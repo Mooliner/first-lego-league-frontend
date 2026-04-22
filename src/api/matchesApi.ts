@@ -30,6 +30,16 @@ export class MatchesService {
         );
     }
 
+    async getMatchesPaged(page: number, size: number): Promise<HalPage<Match>> {
+        return fetchHalPagedCollection<Match>(
+            "/matches?sort=startTime,asc&sort=id,asc",
+            this.authStrategy,
+            "matches",
+            page,
+            size
+        );
+    }
+
     async getMatchesByEdition(editionUri: string): Promise<Match[]> {
         return fetchHalCollection<Match>(
             `${editionUri}?sort=startTime,asc&sort=id,asc&size=1000`,
