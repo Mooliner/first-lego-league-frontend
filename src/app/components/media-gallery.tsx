@@ -226,7 +226,7 @@ function CarouselSection({ items, startIndex, onOpen }: { readonly items: MediaI
 
     return (
         <div className="group/c relative">
-            <button onClick={() => scroll("left")} aria-label="Scroll left"
+            <button type="button" onClick={() => scroll("left")} aria-label="Scroll left"
                 className="absolute left-0 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2 rounded-full border border-border bg-background/90 p-2 shadow-md opacity-0 transition-opacity group-hover/c:opacity-100">
                 <ChevronLeft className="h-4 w-4" />
             </button>
@@ -246,7 +246,7 @@ function CarouselSection({ items, startIndex, onOpen }: { readonly items: MediaI
                 })}
             </div>
 
-            <button onClick={() => scroll("right")} aria-label="Scroll right"
+            <button type="button" onClick={() => scroll("right")} aria-label="Scroll right"
                 className="absolute right-0 top-1/2 z-10 -translate-y-1/2 translate-x-1/2 rounded-full border border-border bg-background/90 p-2 shadow-md opacity-0 transition-opacity group-hover/c:opacity-100">
                 <ChevronRight className="h-4 w-4" />
             </button>
@@ -309,7 +309,7 @@ export function MediaGallery({ mediaContents }: MediaGalleryProps) {
 
                         <div className="flex items-center gap-3">
                             {mediaContents.length > 1 && (
-                                <button onClick={prev} aria-label="Previous" className="flex-none rounded-full border border-border bg-background p-2 shadow-sm transition-colors hover:bg-secondary">
+                                <button type="button" onClick={prev} aria-label="Previous" className="flex-none rounded-full border border-border bg-background p-2 shadow-sm transition-colors hover:bg-secondary">
                                     <ChevronLeft className="h-5 w-5" />
                                 </button>
                             )}
@@ -317,7 +317,7 @@ export function MediaGallery({ mediaContents }: MediaGalleryProps) {
                                 {activeItem && <LightboxContent item={activeItem} index={activeIndex} />}
                             </div>
                             {mediaContents.length > 1 && (
-                                <button onClick={next} aria-label="Next" className="flex-none rounded-full border border-border bg-background p-2 shadow-sm transition-colors hover:bg-secondary">
+                                <button type="button" onClick={next} aria-label="Next" className="flex-none rounded-full border border-border bg-background p-2 shadow-sm transition-colors hover:bg-secondary">
                                     <ChevronRight className="h-5 w-5" />
                                 </button>
                             )}
@@ -326,7 +326,7 @@ export function MediaGallery({ mediaContents }: MediaGalleryProps) {
                         {mediaContents.length > 1 && (
                             <div className="mt-5 flex justify-center gap-1.5">
                                 {mediaContents.map((item, i) => (
-                                    <button key={item.uri ?? item.id ?? item.url ?? String(i)} onClick={() => setActiveIndex(i)} aria-label={`Go to ${i + 1}`}
+                                    <button type="button" key={item.uri ?? item.id ?? item.url ?? String(i)} onClick={() => setActiveIndex(i)} aria-label={`Go to ${i + 1}`}
                                         className={`h-1.5 rounded-full transition-all ${i === activeIndex ? "w-4 bg-primary" : "w-1.5 bg-border hover:bg-muted-foreground"}`} />
                                 ))}
                             </div>
