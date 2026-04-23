@@ -4,6 +4,7 @@ import EmptyState from '@/app/components/empty-state';
 import { Input } from '@/app/components/input';
 import { VolunteerRole } from '@/types/volunteer';
 import { useState } from 'react';
+import Link from 'next/link';
 
 export interface VolunteerItem {
     name?: string;
@@ -37,27 +38,37 @@ function VolunteerSection({ title, typePlural, volunteers, emptyMessage }: Reado
     return (
         <div className="space-y-4 pt-4">
             <h3 className="text-xl font-semibold tracking-tight">{title}</h3>
+
             <Input
                 type="search"
                 placeholder={`Search ${typePlural} by name...`}
                 value={query}
                 onChange={e => setQuery(e.target.value)}
-                aria-label={`Search ${typePlural}`}
             />
+
             {filtered.length === 0 ? (
                 <EmptyState
-                    title={query ? `No ${typePlural} match "${query}"` : `No ${typePlural} found`}
-                    description={query ? 'Try a different search term.' : emptyMessage}
+                    title={`No ${typePlural} found`}
+                    description={emptyMessage}
                 />
             ) : (
                 <ul className="list-grid">
                     {filtered.map((v, idx) => {
-                        const id = v.name ? `${v.type}-${v.name}-${idx}` : `${v.type}-${idx}`;
+                        const encoded = encodeURIComponent(`${v.type}-${v.name}-${idx}`);
+
                         return (
-                            <li key={id} className="list-card pl-7">
+                            <li key={encoded} className="list-card pl-7">
                                 <div className="list-kicker">{v.type}</div>
-                                <div className="list-title block font-medium">{v.name || 'Unknown'}</div>
-                                {v.emailAddress && <div className="list-support">{v.emailAddress}</div>}
+
+                                <Link href={`/volunteers/${encoded}`}>
+                                    <div className="list-title font-medium cursor-pointer hover:underline">
+                                        {v.name || 'Unknown'}
+                                    </div>
+                                </Link>
+
+                                {v.emailAddress && (
+                                    <div className="list-support">{v.emailAddress}</div>
+                                )}
                             </li>
                         );
                     })}
