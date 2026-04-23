@@ -28,10 +28,7 @@ function toTeamMemberSnapshot(member: TeamMember): TeamMemberSnapshot {
 }
 
 function getTeamDisplayName(team: Team | null): string | null {
-    if (!team) {
-        return null;
-    }
-
+    if (!team) return null;
     return team.name ?? team.id ?? null;
 }
 
@@ -96,14 +93,21 @@ export default async function TeamDetailPage(props: Readonly<TeamDetailPageProps
     );
 
     const currentUserEmail = currentUser?.email?.trim().toLowerCase();
+
     const isCoach = !!currentUserEmail && coaches.some(
         (coach) => coach.emailAddress?.trim().toLowerCase() === currentUserEmail
     );
 
-    const coachName = coaches.length > 0
-        ? (coaches[0].name ?? coaches[0].emailAddress ?? "Unnamed coach")
-        : "No coach assigned";
+    // ✅ FIX PRINCIPAL: múltiples coaches
+    const coachName =
+        coaches.length > 0
+            ? coaches
+                .map(c => c.name ?? c.emailAddress ?? "Unnamed coach")
+                .join(", ")
+            : "No coach assigned";
+
     const initialMembers = members.map(toTeamMemberSnapshot);
+
     const membersKey = initialMembers
         .map((member) => member.uri ?? String(member.id ?? member.name ?? ""))
         .join("|");
@@ -112,14 +116,24 @@ export default async function TeamDetailPage(props: Readonly<TeamDetailPageProps
         <div className="flex min-h-screen items-center justify-center bg-background">
             <div className="w-full max-w-3xl px-4 py-10">
                 <div className="w-full rounded-lg border bg-white p-6 shadow-sm dark:bg-black">
-                    <h1 className="mb-2 text-2xl font-semibold">{teamDisplayName ?? "Unnamed team"}</h1>
+
+                    <h1 className="mb-2 text-2xl font-semibold">
+                        {teamDisplayName ?? "Unnamed team"}
+                    </h1>
 
                     <div className="mb-6 space-y-1 text-sm text-muted-foreground">
-                        {team.city && <p><strong>City:</strong> {team.city}</p>}
-                        <p><strong>Coach:</strong> {coachName}</p>
+                        {team.city && (
+                            <p><strong>City:</strong> {team.city}</p>
+                        )}
+
+                        <p>
+                            <strong>Coach:</strong> {coachName}
+                        </p>
                     </div>
 
-                    <h2 className="mt-8 mb-4 text-xl font-semibold">Team Members</h2>
+                    <h2 className="mt-8 mb-4 text-xl font-semibold">
+                        Team Members
+                    </h2>
 
                     {!membersError && (
                         <TeamMembersManager
@@ -130,7 +144,10 @@ export default async function TeamDetailPage(props: Readonly<TeamDetailPageProps
                             isAdmin={isAdmin}
                         />
                     )}
-                    {membersError && <ErrorAlert message={membersError} />}
+
+                    {membersError && (
+                        <ErrorAlert message={membersError} />
+                    )}
 
                     <section aria-labelledby="team-projects-heading">
                         <h2 id="team-projects-heading" className="mt-8 mb-4 text-xl font-semibold">
@@ -153,12 +170,17 @@ export default async function TeamDetailPage(props: Readonly<TeamDetailPageProps
                             <ul className="space-y-3">
                                 {scientificProjects.map((project, index) => (
                                     <li key={project.uri ?? project.link("self")?.href ?? index}>
-                                        <ScientificProjectCardLink project={project} index={index} variant="stacked" />
+                                        <ScientificProjectCardLink
+                                            project={project}
+                                            index={index}
+                                            variant="stacked"
+                                        />
                                     </li>
                                 ))}
                             </ul>
                         )}
                     </section>
+
                 </div>
             </div>
         </div>
