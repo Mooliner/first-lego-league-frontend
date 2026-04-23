@@ -4,8 +4,9 @@ import ErrorAlert from "@/app/components/error-alert";
 import PageShell from "@/app/components/page-shell";
 import { InfoRow } from "@/app/components/info-row";
 import { TeamCard } from "@/app/components/team-card";
+import ScientificProjectEvaluationEditor from "./scientific-project-evaluation-editor";
 import { serverAuthProvider } from "@/lib/authProvider";
-import { isAdmin } from "@/lib/authz";
+import { isAdmin, isJudge } from "@/lib/authz";
 import { fetchHalCollection, fetchHalResource } from "@/api/halClient";
 import { NotFoundError, parseErrorMessage } from "@/types/errors";
 import { ScientificProject } from "@/types/scientificProject";
@@ -13,7 +14,9 @@ import { ProjectRoom } from "@/types/projectRoom";
 import { Team } from "@/types/team";
 import { User } from "@/types/user";
 import { Volunteer } from "@/types/volunteer";
-import ScientificProjectDeleteSection from "./scientific-project-delete-section";
+import { buttonVariants } from "@/app/components/button";
+import Link from "next/link";
+import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
@@ -33,6 +36,7 @@ function getProjectTitle(project: ScientificProject | null, id: string): string 
 export default async function ScientificProjectDetailPage(props: Readonly<ScientificProjectDetailPageProps>) {
     const { id } = await props.params;
     const service = new ScientificProjectsService(serverAuthProvider);
+    const userService = new UsersService(serverAuthProvider);
 
     let project: ScientificProject | null = null;
     let team: Team | null = null;
@@ -44,9 +48,17 @@ export default async function ScientificProjectDetailPage(props: Readonly<Scient
     let teamError: string | null = null;
 
     try {
-        currentUser = await new UsersService(serverAuthProvider).getCurrentUser();
+        currentUser = await userService.getCurrentUser().catch(() => null);
     } catch (e) {
         console.error("Failed to fetch current user:", e);
+    }
+
+    if (!currentUser) {
+        redirect("/login");
+    }
+
+    if (!isAdmin(currentUser) && !isJudge(currentUser)) {
+        redirect("/");
     }
 
     try {
@@ -104,14 +116,13 @@ export default async function ScientificProjectDetailPage(props: Readonly<Scient
             eyebrow="Scientific Project"
             title={getProjectTitle(project, id)}
             description={project?.score !== undefined && project?.score !== null ? `Score: ${project.score} pts` : undefined}
+            heroAside={isAdmin(currentUser) && project ? (
+                <Link href={`/scientific-projects/${id}/edit`} className={buttonVariants({ variant: "default", size: "sm" })}>
+                    Edit
+                </Link>
+            ) : undefined}
         >
             {projectError && <ErrorAlert message={projectError} />}
-
-            {!projectError && project && isAdmin(currentUser) && (
-                <div className="flex justify-end">
-                    <ScientificProjectDeleteSection projectId={id} />
-                </div>
-            )}
 
             {!projectError && project && (
                 <div className="space-y-8">
@@ -129,6 +140,12 @@ export default async function ScientificProjectDetailPage(props: Readonly<Scient
                                     <InfoRow label="Comments" value={project.comments} />
                                 )}
                             </div>
+                            <ScientificProjectEvaluationEditor
+                                projectId={id}
+                                currentScore={project.score}
+                                currentComments={project.comments}
+                                canEdit={true}
+                            />
                         </div>
                     </section>
 
