@@ -60,6 +60,14 @@ export class EditionsService {
         return editions.length > 0 ? editions[0] : null;
     }
 
+    async getEditionsByVenueName(venueName: string): Promise<Edition[]> {
+        return fetchHalCollection<Edition>(
+            `/editions/search/findByVenueName?venueName=${encodeURIComponent(venueName)}`,
+            this.authStrategy,
+            'editions'
+        );
+    }
+
     async getEditionTeams(id: string): Promise<Team[]> {
         const editionId = encodeURIComponent(id);
         return fetchHalCollection<Team>(`/editions/${editionId}/teams`, this.authStrategy, 'teams');
