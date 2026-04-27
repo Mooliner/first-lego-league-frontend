@@ -5,23 +5,24 @@ import { buttonVariants } from "@/app/components/button";
 import EmptyState from "@/app/components/empty-state";
 import ErrorAlert from "@/app/components/error-alert";
 import PageShell from "@/app/components/page-shell";
+import PaginationControls from "@/app/components/pagination-controls";
 import { serverAuthProvider } from "@/lib/authProvider";
 import { isAdmin } from "@/lib/authz";
 import { getEncodedResourceId } from "@/lib/halRoute";
 import { formatMatchTime } from "@/lib/matchUtils";
 import { parseErrorMessage } from "@/types/errors";
+import type { HalPage } from "@/types/pagination";
 import { Match } from "@/types/match";
 import { User } from "@/types/user";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
-function getTeamsLabel(match: Match) {
-    return `${match.teamA} vs ${match.teamB}`;
-}
+const PAGE_SIZE = 5;
 
-function compareMatchTimes(left: string = "", right: string = "") {
-    return left.localeCompare(right);
+function getTeamsLabel(match: Match, labels: Record<string, string>) {
+    const key = match.link("self")?.href ?? match.uri;
+    return labels[key] ?? "Unknown Team vs Unknown Team";
 }
 
 function getMatchKey(match: Match, index: number) {
@@ -36,7 +37,11 @@ function getMatchKey(match: Match, index: number) {
     return match.link("self")?.href ?? `match-${index}`;
 }
 
-function MatchesTable({ matches, yearQuery }: Readonly<{ matches: Match[], yearQuery: string }>) {
+function compareMatchTimes(left: string = "", right: string = "") {
+    return left.localeCompare(right);
+}
+
+function MatchesTable({ matches, labels, yearQuery }: Readonly<{ matches: Match[]; labels: Record<string, string>; yearQuery: string }>) {
     return (
         <div className="overflow-hidden border border-border">
             <div className="overflow-x-auto">
@@ -69,10 +74,10 @@ function MatchesTable({ matches, yearQuery }: Readonly<{ matches: Match[], yearQ
                                                 href={`/matches/${matchId}${yearQuery}`}
                                                 className="hover:text-foreground hover:underline underline-offset-2"
                                             >
-                                                {getTeamsLabel(match)}
+                                                {getTeamsLabel(match, labels)}
                                             </Link>
                                         ) : (
-                                            getTeamsLabel(match)
+                                            getTeamsLabel(match, labels)
                                         )}
                                     </td>
                                 </tr>
@@ -98,10 +103,17 @@ function getFriendlyMatchesError(error: unknown) {
 type PageSearchParams = Promise<Record<string, string | string[] | undefined>>;
 
 export default async function MatchesPage({ searchParams }: Readonly<{ searchParams: PageSearchParams }>) {
+    const params = await searchParams;
+    const yearParam = params.year;
+    const year = Array.isArray(yearParam) ? yearParam[0] : yearParam;
+    const yearQuery = year ? `?year=${year}` : "";
+    const urlPage = Math.max(1, Number(params.page ?? "1") || 1);
+
     let matches: Match[] = [];
+    let matchLabels: Record<string, string> = {};
+    let result: HalPage<Match> = { items: [], hasNext: false, hasPrev: false, currentPage: 0 };
     let error: string | null = null;
     let currentUser: User | null = null;
-    let yearQuery = "";
 
     try {
         currentUser = await new UsersService(serverAuthProvider).getCurrentUser();
@@ -110,40 +122,67 @@ export default async function MatchesPage({ searchParams }: Readonly<{ searchPar
     }
 
     try {
-        const params = await searchParams;
-        const yearParam = params.year;
-        const year = Array.isArray(yearParam) ? yearParam[0] : yearParam;
-        yearQuery = year ? `?year=${year}` : "";
-
         const service = new MatchesService(serverAuthProvider);
-        let response: Match[];
 
         if (year) {
             const editionsService = new EditionsService(serverAuthProvider);
             const edition = await editionsService.getEditionByYear(year);
 
-            if (edition && edition.uri) {
-                response = await service.getMatchesByEdition(edition.uri + "/matches");
-            } else {
-                response = [];
+            if (edition?.uri) {
+                const response = await service.getMatchesByEdition(edition.uri + "/matches");
+                matches = [...response].sort((left, right) => {
+                    const startDiff = compareMatchTimes(left.startTime, right.startTime);
+                    if (startDiff !== 0) return startDiff;
+                    const endDiff = compareMatchTimes(left.endTime, right.endTime);
+                    if (endDiff !== 0) return endDiff;
+                    return String(left.id ?? "").localeCompare(String(right.id ?? ""));
+                });
             }
         } else {
-            response = await service.getMatches();
+            result = await service.getMatchesPaged(urlPage - 1, PAGE_SIZE);
+            matches = result.items;
         }
 
-        matches = [...response].sort((left, right) => {
-            const startTimeDifference = compareMatchTimes(left.startTime, right.startTime);
-            if (startTimeDifference !== 0) {
-                return startTimeDifference;
+        const resolvedLabels = await Promise.all(matches.map(async (match) => {
+            const selfLink = match.link("self")?.href ?? match.uri;
+            const matchId = getEncodedResourceId(selfLink);
+            
+            if (!matchId) return { key: selfLink, label: "Unknown Team vs Unknown Team" };
+
+            let nameA = match.teamA;
+            let nameB = match.teamB;
+
+            try {
+                if (match.link("teamA")) {
+                    const tA = await service.getMatchTeamA(decodeURIComponent(matchId));
+                    nameA = tA?.name ?? tA?.id ?? nameA ?? "Team A";
+                }
+            } catch (error) {
+                console.error(`Failed to fetch team A for match ${matchId}:`, error);
+                if (!nameA) nameA = "Team A";
             }
 
-            const endTimeDifference = compareMatchTimes(left.endTime, right.endTime);
-            if (endTimeDifference !== 0) {
-                return endTimeDifference;
+            try {
+                if (match.link("teamB")) {
+                    const tB = await service.getMatchTeamB(decodeURIComponent(matchId));
+                    nameB = tB?.name ?? tB?.id ?? nameB ?? "Team B";
+                }
+            } catch (error) {
+                console.error(`Failed to fetch team B for match ${matchId}:`, error);
+                if (!nameB) nameB = "Team B";
             }
 
-            return String(left.id ?? "").localeCompare(String(right.id ?? ""));
-        });
+            return {
+                key: selfLink,
+                label: `${nameA ?? "Team A"} vs ${nameB ?? "Team B"}`
+            };
+        }));
+
+        matchLabels = resolvedLabels.reduce((acc, { key, label }) => {
+            acc[key] = label;
+            return acc;
+        }, {} as Record<string, string>);
+
     } catch (fetchError) {
         console.error("Failed to fetch matches:", fetchError);
         error = getFriendlyMatchesError(fetchError);
@@ -167,7 +206,6 @@ export default async function MatchesPage({ searchParams }: Readonly<{ searchPar
                 <div className="space-y-3">
                     <div className="page-eyebrow">Live listing</div>
                     <h2 className="section-title">Match schedule</h2>
-
                 </div>
 
                 {error && <ErrorAlert message={error} />}
@@ -181,10 +219,15 @@ export default async function MatchesPage({ searchParams }: Readonly<{ searchPar
 
                 {!error && matches.length > 0 && (
                     <div className="space-y-4">
-                        <p className="text-sm text-muted-foreground">
-                            Showing {matches.length} match{matches.length === 1 ? "" : "es"} fetched from the backend.
-                        </p>
-                        <MatchesTable matches={matches} yearQuery={yearQuery} />
+                        <MatchesTable matches={matches} labels={matchLabels} yearQuery={yearQuery} />
+                        {!year && (
+                            <PaginationControls
+                                currentPage={urlPage}
+                                hasNext={result.hasNext}
+                                hasPrev={result.hasPrev}
+                                basePath="/matches"
+                            />
+                        )}
                     </div>
                 )}
             </div>

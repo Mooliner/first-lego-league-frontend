@@ -1,63 +1,19 @@
 import { EditionsService } from "@/api/editionApi";
+import { UsersService } from "@/api/userApi";
 import PageShell from "@/app/components/page-shell";
 import ErrorAlert from "@/app/components/error-alert";
-import EmptyState from "@/app/components/empty-state";
+import { buttonVariants } from "@/app/components/button";
 import { serverAuthProvider } from "@/lib/authProvider";
 import { isAdmin } from "@/lib/authz";
-import { getEncodedResourceId } from "@/lib/halRoute";
-import { Edition } from "@/types/edition";
 import { parseErrorMessage } from "@/types/errors";
 import { User } from "@/types/user";
 import Link from "next/link";
-import { UsersService } from "@/api/userApi";
-import { buttonVariants } from "@/app/components/button";
+import EditionsClient, { EditionItem } from "./_editions-client";
 
 export const dynamic = "force-dynamic";
 
-function getEditionHref(edition: Edition) {
-    const editionId = getEncodedResourceId(edition.uri);
-    return editionId ? `/editions/${editionId}` : null;
-}
-
-function EditionCard({ edition }: Readonly<{ edition: Edition }>) {
-    const href = getEditionHref(edition);
-    const content = (
-        <div className="flex flex-wrap items-start justify-between gap-4">
-            <div className="min-w-0 space-y-2">
-                <div className="list-kicker">Edition</div>
-                <div className="list-title">{edition.year}</div>
-                {edition.venueName && (
-                    <div className="list-support">{edition.venueName}</div>
-                )}
-                {edition.description && (
-                    <div className="list-support">{edition.description}</div>
-                )}
-            </div>
-            {edition.state && (
-                <div className="status-badge">{edition.state}</div>
-            )}
-        </div>
-    );
-
-    if (!href) {
-        return (
-            <div className="list-card block h-full pl-7">
-                {content}
-            </div>
-        );
-    }
-
-    return (
-        <Link className="list-card block h-full pl-7 hover:text-primary" href={href}>
-            {content}
-        </Link>
-    );
-}
-
-type EditionsPageSearchParams = Promise<Record<string, string | string[] | undefined>>;
-
-export default async function EditionsPage({ searchParams }: Readonly<{ searchParams: EditionsPageSearchParams }>) {
-    let editions: Edition[] = [];
+export default async function EditionsPage() {
+    let editions: EditionItem[] = [];
     let error: string | null = null;
     let currentUser: User | null = null;
 
@@ -68,17 +24,15 @@ export default async function EditionsPage({ searchParams }: Readonly<{ searchPa
     }
 
     try {
-        const params = await searchParams;
-        const rawYear = params.year;
-        const year = Array.isArray(rawYear) ? rawYear[0] : rawYear;
         const service = new EditionsService(serverAuthProvider);
-
-        if (year?.trim()) {
-            const edition = await service.getEditionByYear(year.trim());
-            editions = edition ? [edition] : [];
-        } else {
-            editions = await service.getEditions();
-        }
+        const data = await service.getEditions();
+        editions = data.map(e => ({
+            uri: e.uri,
+            year: e.year,
+            venueName: e.venueName,
+            description: e.description,
+            state: e.state,
+        }));
     } catch (e) {
         console.error("Failed to fetch editions:", e);
         error = parseErrorMessage(e);
@@ -106,21 +60,8 @@ export default async function EditionsPage({ searchParams }: Readonly<{ searchPa
 
                 {error && <ErrorAlert message={error} />}
 
-                {!error && editions.length === 0 && (
-                    <EmptyState
-                        title="No editions found"
-                        description="There are currently no editions available to display."
-                    />
-                )}
-
-                {!error && editions.length > 0 && (
-                    <ul className="list-grid">
-                        {editions.map((edition, index) => (
-                            <li key={edition.uri ?? index}>
-                                <EditionCard edition={edition} />
-                            </li>
-                        ))}
-                    </ul>
+                {!error && (
+                    <EditionsClient editions={editions} />
                 )}
             </div>
         </PageShell>

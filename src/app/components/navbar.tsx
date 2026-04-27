@@ -1,41 +1,37 @@
 "use client";
 
-import { Suspense } from "react";
 import { useAuth } from "@/app/components/authentication";
 import EditionSelector from "@/app/components/edition-selector";
 import Loginbar from "@/app/components/loginbar";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { useState, useEffect } from "react";
+import { Suspense } from "react";
+
+function toggleTheme() {
+    const html = document.documentElement;
+
+    if (html.classList.contains("dark")) {
+        html.classList.remove("dark");
+        localStorage.setItem("theme", "light");
+        return;
+    }
+
+    html.classList.add("dark");
+    localStorage.setItem("theme", "dark");
+}
 
 export default function Navbar() {
     const pathname = usePathname();
     const searchParams = useSearchParams();
     const currentYear = searchParams.get("year");
     const { user } = useAuth();
-    const [isDark, setIsDark] = useState(() => {
-        if (typeof window === 'undefined') return false;
-        return localStorage.getItem('theme') === 'dark';
-    });
-
-    function toggleTheme() {
-        const html = document.documentElement
-        if (html.classList.contains('dark')) {
-            html.classList.remove('dark')
-            localStorage.setItem('theme', 'light')
-            setIsDark(false)
-        } else {
-            html.classList.add('dark')
-            localStorage.setItem('theme', 'dark')
-            setIsDark(true)
-        }
-    }
 
     const navLinks = [
         { href: "/", label: "Home" },
         { href: "/users", label: "Users", roles: ["ROLE_USER"] },
         { href: "/teams", label: "Teams" },
         { href: "/editions", label: "Editions" },
+        { href: "/volunteers", label: "Volunteers" },
         { href: "/scientific-projects", label: "Scientific Projects" },
         { href: "/matches", label: "Matches" },
         { href: "/administrators", label: "Administrators", roles: ["ROLE_ADMIN"] }
@@ -67,9 +63,7 @@ export default function Navbar() {
                             const active = href === "/"
                                 ? pathname === "/"
                                 : pathname === href || pathname.startsWith(`${href}/`);
-                            const hrefWithYear = href === "/"
-                                ? href
-                                : currentYear
+                            const hrefWithYear = currentYear
                                     ? `${href}?year=${encodeURIComponent(currentYear)}`
                                     : href;
                             return (
