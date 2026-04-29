@@ -172,7 +172,7 @@ export default async function ScientificProjectDetailPage(props: Readonly<Scient
                             {projectRoom && (
                                 <div className="space-y-3">
                                     {projectRoom.roomNumber && (
-                                        <InfoRow label="Room" value={projectRoom.roomNumber} />
+                                        <InfoRow label="Room" value={projectRoom.roomNumber + ""} />
                                     )}
                                     {managedByJudge && (
                                         <InfoRow label="Judge" value={managedByJudge.name ?? managedByJudge.emailAddress ?? "Unknown judge"} />

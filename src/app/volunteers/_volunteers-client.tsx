@@ -4,11 +4,13 @@ import EmptyState from '@/app/components/empty-state';
 import { Input } from '@/app/components/input';
 import { VolunteerRole } from '@/types/volunteer';
 import { useState } from 'react';
+import Link from 'next/link';
 
 export interface VolunteerItem {
     name?: string;
     emailAddress?: string;
     type?: VolunteerRole;
+    uri?: string;
 }
 
 interface VolunteersClientProps {
@@ -30,34 +32,46 @@ function filterByName(volunteers: VolunteerItem[], query: string): VolunteerItem
     return volunteers.filter(v => v.name?.toLowerCase().includes(q));
 }
 
-function VolunteerSection({ title, typePlural, volunteers, emptyMessage }: Readonly<VolunteerSectionProps>) {
+function VolunteerSection({
+    title,
+    typePlural,
+    volunteers,
+    emptyMessage,
+}: Readonly<VolunteerSectionProps>) {
     const [query, setQuery] = useState('');
     const filtered = filterByName(volunteers, query);
 
     return (
         <div className="space-y-4 pt-4">
-            <h3 className="text-xl font-semibold tracking-tight">{title}</h3>
+            <h3 className="text-xl font-semibold">{title}</h3>
+
             <Input
                 type="search"
-                placeholder={`Search ${typePlural} by name...`}
+                placeholder={`Search ${typePlural}`}
                 value={query}
                 onChange={e => setQuery(e.target.value)}
-                aria-label={`Search ${typePlural}`}
             />
+
             {filtered.length === 0 ? (
-                <EmptyState
-                    title={query ? `No ${typePlural} match "${query}"` : `No ${typePlural} found`}
-                    description={query ? 'Try a different search term.' : emptyMessage}
-                />
+                <EmptyState title={`No ${typePlural}`} description={emptyMessage} />
             ) : (
                 <ul className="list-grid">
-                    {filtered.map((v, idx) => {
-                        const id = v.name ? `${v.type}-${v.name}-${idx}` : `${v.type}-${idx}`;
+                    {filtered.map((v) => {
+                        const id = v.uri ? encodeURIComponent(v.uri) : '';
+
                         return (
                             <li key={id} className="list-card pl-7">
                                 <div className="list-kicker">{v.type}</div>
-                                <div className="list-title block font-medium">{v.name || 'Unknown'}</div>
-                                {v.emailAddress && <div className="list-support">{v.emailAddress}</div>}
+
+                                <Link href={`/volunteers/${id}`}>
+                                    <div className="list-title font-medium hover:underline cursor-pointer">
+                                        {v.name || 'Unknown'}
+                                    </div>
+                                </Link>
+
+                                {v.emailAddress && (
+                                    <div className="list-support">{v.emailAddress}</div>
+                                )}
                             </li>
                         );
                     })}
@@ -67,26 +81,30 @@ function VolunteerSection({ title, typePlural, volunteers, emptyMessage }: Reado
     );
 }
 
-export default function VolunteersClient({ judges, referees, floaters }: Readonly<VolunteersClientProps>) {
+export default function VolunteersClient({
+    judges,
+    referees,
+    floaters,
+}: Readonly<VolunteersClientProps>) {
     return (
-        <div className="space-y-12 shrink-0">
+        <div className="space-y-12">
             <VolunteerSection
                 title="Judges"
                 typePlural="judges"
                 volunteers={judges}
-                emptyMessage="There are currently no judges registered for the competition."
+                emptyMessage="No judges available"
             />
             <VolunteerSection
                 title="Referees"
                 typePlural="referees"
                 volunteers={referees}
-                emptyMessage="There are currently no referees registered for the competition."
+                emptyMessage="No referees available"
             />
             <VolunteerSection
                 title="Floaters"
                 typePlural="floaters"
                 volunteers={floaters}
-                emptyMessage="There are currently no floaters registered for the competition."
+                emptyMessage="No floaters available"
             />
         </div>
     );

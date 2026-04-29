@@ -7,11 +7,17 @@ import { Volunteer } from "@/types/volunteer";
 import VolunteersClient, { VolunteerItem } from "./_volunteers-client";
 
 function toVolunteerItem(v: Volunteer): VolunteerItem {
-    return { name: v.name, emailAddress: v.emailAddress, type: v.type };
+    return {
+        name: v.name,
+        emailAddress: v.emailAddress,
+        type: v.type,
+        uri: v.uri
+    };
 }
 
 export default async function VolunteersPage() {
     const service = new VolunteersService(serverAuthProvider);
+
     let judges: VolunteerItem[] = [];
     let referees: VolunteerItem[] = [];
     let floaters: VolunteerItem[] = [];
@@ -37,7 +43,11 @@ export default async function VolunteersPage() {
                 {error && <ErrorAlert message={error} />}
 
                 {!error && (
-                    <VolunteersClient judges={judges} referees={referees} floaters={floaters} />
+                    <VolunteersClient
+                        judges={judges}
+                        referees={referees}
+                        floaters={floaters}
+                    />
                 )}
             </div>
         </PageShell>
