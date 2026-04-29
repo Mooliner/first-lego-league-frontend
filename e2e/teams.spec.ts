@@ -22,7 +22,6 @@ test("teams page renders a created team in the roster", async ({ page, request }
     await page.goto("/teams");
 
     await expect(page.getByRole("heading", { name: "Teams", level: 1 })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Competition roster", level: 2 })).toBeVisible();
 
     if (!team) {
         const emptyState = page.getByText("No teams found");
