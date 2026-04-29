@@ -1,6 +1,6 @@
 import { Resource } from "halfred";
-import type { VolunteerEntity } from "./volunteer";
 import type { ScientificProjectEntity } from "./scientificProject";
+import type { VolunteerEntity } from "./volunteer";
 
 export interface ProjectRoomEntity {
     uri?: string;
