@@ -12,7 +12,6 @@ import { parseErrorMessage } from "@/types/errors";
 import type { HalPage } from "@/types/pagination";
 import { ScientificProject } from "@/types/scientificProject";
 import Link from "next/link";
-import SearchBar from "@/app/components/search-bar";
 
 type PageSearchParams = Promise<Record<string, string | string[] | undefined>>;
 
@@ -22,8 +21,6 @@ export default async function ScientificProjectsPage({ searchParams }: Readonly<
     const params = await searchParams;
     const yearParam = params.year;
     const year = Array.isArray(yearParam) ? yearParam[0] : yearParam;
-    const teamParam = params.teamName;
-    const teamName = Array.isArray(teamParam) ? teamParam[0] : teamParam;
     const yearQuery = year ? `?year=${year}` : "";
     const urlPage = Math.max(1, Number(params.page ?? "1") || 1);
 
@@ -36,9 +33,7 @@ export default async function ScientificProjectsPage({ searchParams }: Readonly<
     try {
         const service = new ScientificProjectsService(serverAuthProvider);
 
-        if (teamName) {
-            projects = await service.getScientificProjectsByTeamName(teamName);
-        } else if (year) {
+        if (year) {
             const editionsService = new EditionsService(serverAuthProvider);
             const edition = await editionsService.getEditionByYear(year);
             const editionId = edition?.uri ? getEncodedResourceId(edition.uri) : null;
@@ -66,7 +61,6 @@ export default async function ScientificProjectsPage({ searchParams }: Readonly<
             ) : undefined}
         >
             <div className="space-y-6">
-                <SearchBar />
                 <div className="space-y-3">
                     <div className="page-eyebrow">Project list</div>
                     <h2 className="section-title">Season projects overview</h2>
