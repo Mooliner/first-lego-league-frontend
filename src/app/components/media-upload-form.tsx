@@ -2,6 +2,9 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
+import { MediaService } from "@/api/mediaApi"; 
+import { serverAuthProvider } from "@/lib/authProvider";
+
 export default function MediaUploadForm({ editionId }: { editionId: string }) {
     const router = useRouter();
     const [rows, setRows] = useState([{ url: '', type: 'IMAGE' }]);
@@ -22,13 +25,19 @@ export default function MediaUploadForm({ editionId }: { editionId: string }) {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsSubmitting(true);
+
+        const url = `http://localhost:8080/editions/${editionId}/media/batch`;
+        console.log("Intentant fer petició a:", url);
         
         try {
-            const response = await fetch(`/editions/${editionId}/media/batch`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(rows),
-            });
+            const response = await fetch(url, {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(rows),
+            credentials: 'include',
+        });
 
             if (response.ok) {
                 alert('Media uploaded successfully!');
